@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parking View (Live)</title>
+    <!-- using bootstrap cause its easy -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f0f2f5;
+            font-family: sans-serif;
+        }
+
+        .floorBox {
+            background: #fff;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .f_title {
+            border-bottom: 2px solid #ddd;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            color: #333;
+        }
+
+        /* main grid setup */
+        .myGrid {
+            display: grid;
+            gap: 15px;
+            grid-template-columns: repeat(5, 1fr);
+        }
+
+        .mySpot {
+            aspect-ratio: 1 / 1;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+            position: relative;
+        }
+
+        .st_free {
+            background-color: #4caf50;
+            color: white;
+        }
+
+        .st_taken {
+            background-color: #f44336;
+            color: white;
+        }
+
+        .st_res {
+            background-color: #ff9800;
+            color: white;
+        }
+
+        .s_id {
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-bottom: 5px;
+        }
+
+        .s_stat {
+            font-size: 0.9em;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .car_anim {
+            font-size: 2em;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-3px);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .myGrid {
+                grid-template-columns: repeat(3, 1fr) !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container-fluid">
+            <span class="navbar-brand">Live Parking View (Anonymous)</span>
+            <span class="navbar-text text-white" id="lastUpdated_txt">Waiting...</span>
+        </div>
+    </nav>
+
+    <div class="container mt-4" id="main_wrapper">
+        <div class="text-center mt-5">
+            <div class="spinner-border" role="status"></div>
+            <p>Connecting...</p>
+        </div>
+    </div>
+
+    <script>
+        var API_URL = 'parking_data2.json';
+
+        async function getData_now() {
+            try {
+                console.log("fetching...");
+                const res = await fetch(`${API_URL}?t=${Date.now()}`);
+                if (!res.ok) throw new Error("bad fetch");
+
+                var json_d = await res.json();
+                update_ui(json_d);
+
+                let d = new Date(json_d.last_updated * 1000);
+                document.getElementById('lastUpdated_txt').innerText = "Last update: " + d.toLocaleTimeString();
+            } catch (err) {
+                console.log("ERROR:", err);
+            }
+        }
+
+        function update_ui(theData) {
+            var bigBox = document.getElementById('main_wrapper');
+            bigBox.innerHTML = '';
+
+            // group by floors
+            var f_map = {};
+            theData.spots.forEach(s => {
+                let fl = s.floor;
+                if (!f_map[fl]) f_map[fl] = [];
+                f_map[fl].push(s);
+            });
+
+            // sort floors (desc)
+            var floors_arr = Object.keys(f_map).sort((x, y) => y - x);
+
+            floors_arr.forEach(f_num => {
+                // create section
+                var sect = document.createElement('div');
+                sect.className = 'floorBox';
+                sect.innerHTML = `<h3 class="f_title">Floor ${f_num}</h3>`;
+
+                var g = document.createElement('div');
+                g.className = 'myGrid';
+
+                // calc cols
+                var max_c = 0;
+                f_map[f_num].map(x => {
+                    if (x.col > max_c) max_c = x.col;
+                });
+                let real_cols = max_c + 1;
+                g.style.gridTemplateColumns = `repeat(${real_cols}, 1fr)`;
+
+                // sort spots
+                f_map[f_num].sort((a, b) => {
+                    if (a.row === b.row) return a.col - b.col;
+                    return a.row - b.row;
+                });
+
+                f_map[f_num].forEach(sp => {
+                    let css_k = 'st_free';
+                    let icn = '';
+                    let txt = 'Free';
+
+                    if (sp.status === 'occupied') {
+                        css_k = 'st_taken';
+                        icn = '<div class="car_anim"> </div>';
+                        txt = 'Occupied';
+                    } else if (sp.status === 'reserved') {
+                        css_k = 'st_res';
+                        icn = '<div style="font-size:1.5em"> </div>';
+                        txt = 'Reserved';
+                    }
+
+                    var d = document.createElement('div');
+                    d.className = `mySpot ${css_k}`;
+                    d.innerHTML = `
+                    <div class="s_id">${sp.spot_id}</div>
+                    ${icn}
+                    <div class="s_stat">${txt}</div>
+                `;
+                    g.appendChild(d);
+                });
+
+                sect.appendChild(g);
+                bigBox.appendChild(sect);
+            });
+        }
+
+        // auto refresh
+        setInterval(getData_now, 2000);
+        getData_now();
+    </script>
+
+</body>
+
+</html>
