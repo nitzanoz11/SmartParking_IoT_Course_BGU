@@ -1,0 +1,24 @@
+Metadata-Version: 2.4
+Name: AWSIoTPythonSDK
+Version: 1.5.5
+Summary: SDK for connecting to AWS IoT using Python.
+Home-page: https://github.com/aws/aws-iot-device-sdk-python.git
+Download-URL: https://s3.amazonaws.com/aws-iot-device-sdk-python/aws-iot-device-sdk-python-latest.zip
+Author: Amazon Web Service
+Author-email: 
+Keywords: aws,iot,mqtt
+Classifier: Development Status :: 6 - Mature
+Classifier: Intended Audience :: Developers
+Classifier: Natural Language :: English
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+License-File: LICENSE.txt
+License-File: NOTICE.txt
+Dynamic: author
+Dynamic: classifier
+Dynamic: download-url
+Dynamic: home-page
+Dynamic: keywords
+Dynamic: license-file
+Dynamic: summary
